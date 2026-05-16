@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet *)",
+      "Bash(DOTNET_ROLL_FORWARD=Major dotnet test \"ConsultPro.API.Tests/ConsultPro.API.Tests.csproj\" --no-build --nologo)",
+      "Bash(DOTNET_ROLL_FORWARD=Major dotnet test \"ConsultPro.API.Tests/ConsultPro.API.Tests.csproj\" --nologo)",
+      "PowerShell(dotnet test *)",
+      "PowerShell(try { $w = New-Object -ComObject Word.Application -ErrorAction Stop; \"Word OK: $\\($w.Version\\)\"; $w.Quit\\(\\) } catch { \"ERROR: $\\($_.Exception.Message\\)\" })"
+    ]
+  }
+}

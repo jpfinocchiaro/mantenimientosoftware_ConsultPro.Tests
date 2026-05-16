@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet *)",
+      "Bash(DOTNET_ROLL_FORWARD=Major dotnet test \"ConsultPro.API.Tests/ConsultPro.API.Tests.csproj\" --no-build --nologo)",
+      "Bash(DOTNET_ROLL_FORWARD=Major dotnet test \"ConsultPro.API.Tests/ConsultPro.API.Tests.csproj\" --nologo)",
+      "PowerShell(dotnet test *)"
+    ]
+  }
+}
