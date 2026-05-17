@@ -1,0 +1,371 @@
+{
+	"info": {
+		"_postman_id": "a3f5d9c2-8e7b-4f1a-b6d4-2c5a9e3b8f7d",
+		"name": "ConsultPro API - Pruebas sobre Alta de Clientes",
+		"description": "Colección de pruebas funcionales sobre el endpoint /api/clientes del Sistema ConsultPro.\n\nEsta colección forma parte del anexo técnico de la Actividad 3 de la asignatura Mantenimiento y Evolución de Software (VIU - 1ra. Convocatoria) del alumno Juan Pablo Finocchiaro.\n\nCubre los siguientes escenarios:\n- PA-1: Alta de cliente con datos mínimos (replica PF-1)\n- PA-2: Alta de cliente con todos los campos completos (replica PF-2)\n- PA-3: Alta con email inválido (regresión del Defecto#PF-3-001)\n- PA-4: Búsqueda de clientes con filtro de texto\n- PA-5: Eliminación de cliente\n\nVariables de entorno requeridas:\n- baseUrl: URL base del backend (por ejemplo: https://api.consultpro.local)\n- token: JWT Bearer Token obtenido del endpoint de autenticación\n- clienteIdCreado: variable que se setea automáticamente en PA-1 y se consume en PA-5",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "consultpro-tests"
+	},
+	"item": [
+		{
+			"name": "PA-1 - POST alta de cliente con datos válidos (replica PF-1)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code es 201 Created\", () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test(\"La respuesta incluye un Id asignado\", () => {",
+							"    const body = pm.response.json();",
+							"    pm.expect(body.id).to.be.a(\"number\").and.above(0);",
+							"    // Guardamos el id para usarlo en pruebas posteriores",
+							"    pm.environment.set(\"clienteIdCreado\", body.id);",
+							"});",
+							"",
+							"pm.test(\"El cliente devuelto refleja los datos enviados\", () => {",
+							"    const body = pm.response.json();",
+							"    pm.expect(body.nombre).to.eql(\"Cliente Demo SA\");",
+							"    pm.expect(body.activo).to.be.true;",
+							"});",
+							"",
+							"pm.test(\"Tiempo de respuesta menor a 1500 ms\", () => {",
+							"    pm.expect(pm.response.responseTime).to.be.below(1500);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"nombre\": \"Cliente Demo SA\",\n  \"industria\": null,\n  \"personaContacto\": null,\n  \"email\": null,\n  \"activo\": true\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/clientes",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"clientes"
+					]
+				},
+				"description": "Cubre PF-1: Alta exitosa de cliente con solo el campo obligatorio (Nombre).\n\nGuarda el id del cliente creado en la variable de entorno {{clienteIdCreado}} para que pueda ser consumido por la prueba PA-5."
+			},
+			"response": []
+		},
+		{
+			"name": "PA-2 - POST alta de cliente con todos los campos (replica PF-2)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code es 201 Created\", () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test(\"Todos los campos opcionales fueron persistidos correctamente\", () => {",
+							"    const body = pm.response.json();",
+							"    pm.expect(body.industria).to.eql(\"Tecnología\");",
+							"    pm.expect(body.personaContacto).to.eql(\"Juan Pérez\");",
+							"    pm.expect(body.email).to.eql(\"contacto@techsolutions.com\");",
+							"});",
+							"",
+							"pm.test(\"cantidadProyectos viene en 0 para un cliente recién creado\", () => {",
+							"    pm.expect(pm.response.json().cantidadProyectos).to.eql(0);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"nombre\": \"Tech Solutions SRL\",\n  \"industria\": \"Tecnología\",\n  \"personaContacto\": \"Juan Pérez\",\n  \"email\": \"contacto@techsolutions.com\",\n  \"activo\": true\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/clientes",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"clientes"
+					]
+				},
+				"description": "Cubre PF-2: Alta exitosa de cliente con todos los campos completos. Verifica que los cinco campos del DTO (nombre, industria, persona de contacto, email, activo) quedan correctamente persistidos."
+			},
+			"response": []
+		},
+		{
+			"name": "PA-3 - POST alta con email inválido (regresión Defecto#PF-3-001)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"El backend rechaza el email inválido con 400\", () => {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test(\"La respuesta indica error de validación en el campo Email\", () => {",
+							"    const body = pm.response.json();",
+							"    // ASP.NET Core devuelve ProblemDetails con un objeto 'errors'",
+							"    pm.expect(body).to.have.property(\"errors\");",
+							"    pm.expect(body.errors).to.have.property(\"Email\");",
+							"});",
+							"",
+							"pm.test(\"El cliente NO fue creado\", () => {",
+							"    const body = pm.response.json();",
+							"    pm.expect(body.id).to.be.undefined;",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"nombre\": \"Cliente Test SA\",\n  \"email\": \"clientearroba.com\",\n  \"activo\": true\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/clientes",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"clientes"
+					]
+				},
+				"description": "Prueba de regresión del Defecto#PF-3-001.\n\nUna vez aplicado el fix sugerido (validación con DataAnnotations [EmailAddress] en el DTO), el backend debe rechazar esta petición con HTTP 400 Bad Request. Si volviera a aceptarse con 201, esta prueba falla y queda en evidencia la regresión.\n\nAntes del fix esta prueba falla (el backend acepta el email inválido y devuelve 201). Después del fix, pasa."
+			},
+			"response": []
+		},
+		{
+			"name": "PA-4 - GET listado con filtro de búsqueda (q=tech)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code es 200 OK\", () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"La respuesta es un array\", () => {",
+							"    pm.expect(pm.response.json()).to.be.an(\"array\");",
+							"});",
+							"",
+							"pm.test(\"Todos los resultados matchean 'tech' en nombre o industria\", () => {",
+							"    const lista = pm.response.json();",
+							"    lista.forEach(cliente => {",
+							"        const matchNombre = cliente.nombre && cliente.nombre.toLowerCase().includes(\"tech\");",
+							"        const matchIndustria = cliente.industria && cliente.industria.toLowerCase().includes(\"tech\");",
+							"        pm.expect(matchNombre || matchIndustria, `Cliente ${cliente.id} no matchea`).to.be.true;",
+							"    });",
+							"});",
+							"",
+							"pm.test(\"Los resultados vienen ordenados por nombre\", () => {",
+							"    const nombres = pm.response.json().map(c => c.nombre);",
+							"    const ordenado = [...nombres].sort((a, b) => a.localeCompare(b));",
+							"    pm.expect(nombres).to.eql(ordenado);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/clientes?q=tech",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"clientes"
+					],
+					"query": [
+						{
+							"key": "q",
+							"value": "tech"
+						}
+					]
+				},
+				"description": "Verifica el endpoint GET /api/clientes con el parámetro q. Valida tres aspectos:\n\n1. La respuesta es un array.\n2. Cada elemento contiene la palabra buscada (case-insensitive) en el campo Nombre o en Industria.\n3. El resultado viene ordenado alfabéticamente por nombre."
+			},
+			"response": []
+		},
+		{
+			"name": "PA-5 - DELETE cliente sin proyectos activos",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code es 204 No Content\", () => {",
+							"    pm.response.to.have.status(204);",
+							"});",
+							"",
+							"pm.test(\"El body de la respuesta está vacío\", () => {",
+							"    pm.expect(pm.response.text()).to.be.empty;",
+							"});",
+							"",
+							"// Verificación adicional: re-consultar el cliente debe devolver 404",
+							"pm.sendRequest({",
+							"    url: pm.environment.get(\"baseUrl\") + \"/api/clientes/\" + pm.environment.get(\"clienteIdCreado\"),",
+							"    method: \"GET\",",
+							"    header: { Authorization: \"Bearer \" + pm.environment.get(\"token\") }",
+							"}, (err, response) => {",
+							"    pm.test(\"GET posterior al DELETE devuelve 404\", () => {",
+							"        pm.expect(response.code).to.eql(404);",
+							"    });",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/clientes/{{clienteIdCreado}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"clientes",
+						"{{clienteIdCreado}}"
+					]
+				},
+				"description": "Elimina el cliente creado por PA-1. Utiliza la variable de entorno clienteIdCreado que quedó persistida durante la ejecución de PA-1.\n\nAdemás del status 204 esperado, ejecuta una verificación adicional mediante pm.sendRequest: hace un GET posterior sobre el mismo id y verifica que devuelva 404 (cliente eliminado correctamente)."
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://api.consultpro.local",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "REEMPLAZAR_POR_JWT_VALIDO",
+			"type": "string"
+		},
+		{
+			"key": "clienteIdCreado",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
